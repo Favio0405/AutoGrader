@@ -3,20 +3,7 @@ package TestObjects;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
-public class FunctionTest {
-    private final String className;
-    private final String methodName;
-    private final Class<?>[] paramTypes;
-    private final Object[] args;
-    private final Object expected;
-
-    public FunctionTest(String className, String methodName, Class<?>[] paramTypes, Object[] args, Object expected) {
-        this.className = className;
-        this.methodName = methodName;
-        this.paramTypes = paramTypes;
-        this.args = args;
-        this.expected = expected;
-    }
+public record FunctionTest(String className, String methodName, Class<?>[] paramTypes, Object[] args, Object expected) {
 
     @Override
     public String toString() {

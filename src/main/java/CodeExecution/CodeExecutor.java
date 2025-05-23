@@ -1,16 +1,18 @@
 package CodeExecution;
 
 import TestObjects.FunctionTest;
+import TestObjects.TestResult;
 
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.List;
+import java.nio.file.*;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -62,15 +64,58 @@ public class CodeExecutor {
         }
     }
 
-    public void loadClasses(URL[] urls){
-        try(URLClassLoader loader = new URLClassLoader(urls)){
-
+    public List<Class<?>> loadClasses(Path dir){
+        List<Class<?>> classes = new ArrayList<>();
+        try(URLClassLoader loader = new URLClassLoader(new URL[]{dir.toUri().toURL()})){
+            try(Stream<Path> pathStream = Files.walk(dir)){
+                pathStream.filter(path -> path.toString().endsWith(".class"))
+                        .forEach(path -> {
+                            String className = dir.relativize(path)
+                                    .toString()
+                                    .replace(FileSystems.getDefault().getSeparator(), ".")
+                                    .replaceAll("\\.class$", "");
+                            try {
+                                classes.add(loader.loadClass(className));
+                            } catch (ClassNotFoundException e) {
+                                System.err.println("Class " + className + " not found");
+                                System.exit(7);
+                            }
+                        });
+            }
         } catch (IOException e) {
             System.err.println("Could not instantiate class loader");
-            System.exit(7);
+            System.exit(8);
         }
 
+        return classes;
     }
 
+    //UNTESTED
+    public TestResult execute(FunctionTest test, Class<?> functionClass){
+        String className = test.className();
+        String methodName = test.methodName();
+        Class<?>[] paramTypes = test.paramTypes();
+        Object[] args = test.args();
+        Object expected = test.expected();
+        Object result = null;
+        try{
+            Method method = functionClass.getDeclaredMethod(className, paramTypes);
+            Object instance = null;
+            if(!Modifier.isStatic(method.getModifiers())){
+                instance = functionClass.getDeclaredConstructor().newInstance();
+            }
+            result = method.invoke(instance, args);
+        }
+        catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e){
+            System.err.println("Method " + methodName + " could not be invoked");
+            System.exit(9);
+        } catch (InstantiationException e) {
+            System.err.println("Could not instantiate class " + className);
+            System.exit(10);
+        }
+        boolean passed = Objects.deepEquals(result, expected);
+
+        return new TestResult(passed, result.toString(), expected.toString(), 0, test);
+    }
 }
 
