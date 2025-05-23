@@ -13,10 +13,11 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.*;
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class CodeExecutor {
+public class CodeExecutor implements Callable<TestResult[]> {
     private final JavaCompiler compiler;
     private final String sourceDirPath;
     private final String outputDirPath;
@@ -64,8 +65,9 @@ public class CodeExecutor {
         }
     }
 
-    public List<Class<?>> loadClasses(Path dir){
-        List<Class<?>> classes = new ArrayList<>();
+    public Map< String, Class<?>> loadClasses(){
+        Map<String, Class<?>> classes = new HashMap<>();
+        Path dir = Paths.get( outputDirPath);
         try(URLClassLoader loader = new URLClassLoader(new URL[]{dir.toUri().toURL()})){
             try(Stream<Path> pathStream = Files.walk(dir)){
                 pathStream.filter(path -> path.toString().endsWith(".class"))
@@ -75,7 +77,7 @@ public class CodeExecutor {
                                     .replace(FileSystems.getDefault().getSeparator(), ".")
                                     .replaceAll("\\.class$", "");
                             try {
-                                classes.add(loader.loadClass(className));
+                                classes.put(className, loader.loadClass(className));
                             } catch (ClassNotFoundException e) {
                                 System.err.println("Class " + className + " not found");
                                 System.exit(7);
@@ -90,8 +92,8 @@ public class CodeExecutor {
         return classes;
     }
 
-    //UNTESTED
-    public TestResult execute(FunctionTest test, Class<?> functionClass){
+    //DOESNT WORK NEEDS FIX
+    public TestResult executeTest(FunctionTest test, Class<?> functionClass){
         String className = test.className();
         String methodName = test.methodName();
         Class<?>[] paramTypes = test.paramTypes();
@@ -99,7 +101,7 @@ public class CodeExecutor {
         Object expected = test.expected();
         Object result = null;
         try{
-            Method method = functionClass.getDeclaredMethod(className, paramTypes);
+            Method method = functionClass.getDeclaredMethod(methodName, paramTypes);
             Object instance = null;
             if(!Modifier.isStatic(method.getModifiers())){
                 instance = functionClass.getDeclaredConstructor().newInstance();
@@ -109,13 +111,33 @@ public class CodeExecutor {
         catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e){
             System.err.println("Method " + methodName + " could not be invoked");
             System.exit(9);
-        } catch (InstantiationException e) {
+        }catch (InstantiationException e) {
             System.err.println("Could not instantiate class " + className);
             System.exit(10);
         }
         boolean passed = Objects.deepEquals(result, expected);
 
-        return new TestResult(passed, result.toString(), expected.toString(), 0, test);
+        String actualStr = (result == null) ? "null" : result.toString();
+        String expectedStr = (expected == null) ? "null" : expected.toString();
+
+        return new TestResult(passed, actualStr, expectedStr, 0, test);
+    }
+
+    public TestResult[] runTests(Map<String, Class<?>> classMap){
+        TestResult[] results = new TestResult[functionTests.length];
+        for(int i = 0; i < results.length; i++){
+            FunctionTest test = functionTests[i];
+            results[i] = executeTest(test, classMap.get(test.className()));
+        }
+
+        return results;
+    }
+
+    @Override
+    public TestResult[] call() throws Exception {
+        compileInDirectory();
+        Map<String, Class<?>> classMap = loadClasses();
+        return runTests(classMap);
     }
 }
 
