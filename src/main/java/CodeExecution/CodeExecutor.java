@@ -61,6 +61,7 @@ public class CodeExecutor implements Callable<TestResult[]> {
             }
         } catch (IOException e) {
             System.err.println("Could not create file");
+            e.printStackTrace();
             System.exit(6);
         }
     }
@@ -80,19 +81,20 @@ public class CodeExecutor implements Callable<TestResult[]> {
                                 classes.put(className, loader.loadClass(className));
                             } catch (ClassNotFoundException e) {
                                 System.err.println("Class " + className + " not found");
+                                e.printStackTrace();
                                 System.exit(7);
                             }
                         });
             }
         } catch (IOException e) {
             System.err.println("Could not instantiate class loader");
+            e.printStackTrace();
             System.exit(8);
         }
 
         return classes;
     }
 
-    //DOESNT WORK NEEDS FIX
     public TestResult executeTest(FunctionTest test, Class<?> functionClass){
         String className = test.className();
         String methodName = test.methodName();
@@ -110,9 +112,11 @@ public class CodeExecutor implements Callable<TestResult[]> {
         }
         catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e){
             System.err.println("Method " + methodName + " could not be invoked");
+            e.printStackTrace();
             System.exit(9);
         }catch (InstantiationException e) {
             System.err.println("Could not instantiate class " + className);
+            e.printStackTrace();
             System.exit(10);
         }
         boolean passed = Objects.deepEquals(result, expected);

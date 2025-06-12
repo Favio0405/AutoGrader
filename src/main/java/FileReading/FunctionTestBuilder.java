@@ -52,8 +52,9 @@ public class FunctionTestBuilder {
             try {
                  paramTypes = readParamTypes(obj.getJSONArray("paramTypes"));
             } catch (ClassNotFoundException e){
-                System.err.println("Invalid parameter type at: ");
+                System.err.print("Invalid parameter type at: ");
                 System.err.println(obj);
+                e.printStackTrace();
                 System.exit(2);
             }
             Object[] args = readArgs(obj.getJSONArray("args"), paramTypes);
