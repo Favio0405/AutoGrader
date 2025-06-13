@@ -7,7 +7,8 @@
       "args": [
         [5, 4, 5]
       ],
-      "expected": 14
+      "expected": 14,
+      "score": 10
     },
     {
       "className": "Multiply",
@@ -16,7 +17,8 @@
       "args": [
         [5, 5]
       ],
-      "expected": 25
+      "expected": 25,
+      "score": 10
     },
     {
       "className": "Divide",
@@ -25,7 +27,8 @@
       "args": [
         [25, 5]
       ],
-      "expected": 5
+      "expected": 5,
+      "score": 10
     }
   ]
 }

@@ -1,4 +1,4 @@
-package FileReading;
+package FileManipulation;
 
 import TestObjects.FunctionTest;
 import org.json.JSONArray;
@@ -59,7 +59,8 @@ public class FunctionTestBuilder {
             }
             Object[] args = readArgs(obj.getJSONArray("args"), paramTypes);
             Object expected = obj.get("expected");
-            functionTests[i] = new FunctionTest(className, methodName, paramTypes, args, expected);
+            double score = obj.getDouble("score");
+            functionTests[i] = new FunctionTest(className, methodName, paramTypes, args, expected, score);
         }
         return functionTests;
     }

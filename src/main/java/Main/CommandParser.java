@@ -8,7 +8,7 @@ public class CommandParser {
         OptionGroup group = new OptionGroup();
 
         Option singleProgram =
-                new Option("p", "program", false, "grade a single program");
+                new Option("p", "program", true, "grade a single program");
         Option batch =
                 new Option("b", "batch", false, "grade a batch of programs");
 
@@ -17,6 +17,13 @@ public class CommandParser {
         group.setRequired(true);
 
         options.addOptionGroup(group);
+
+        Option test =
+                new Option("t", "test", true, "Add test file");
+        test.setRequired(true);
+
+        options.addOption(test);
+
 
         CommandLineParser parser = new DefaultParser();
         CommandLine cmd = null;
@@ -34,5 +41,7 @@ public class CommandParser {
         else if(cmd.hasOption("b")){
             System.out.println("Batch mode");
         }
+
+
     }
 }
