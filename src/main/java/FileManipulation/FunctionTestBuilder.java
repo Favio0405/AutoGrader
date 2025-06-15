@@ -1,6 +1,6 @@
 package FileManipulation;
 
-import TestObjects.FunctionTest;
+import DataObjects.FunctionTest;
 import org.json.JSONArray;
 import org.json.JSONObject;
 

@@ -1,10 +1,12 @@
-package TestObjects;
+package DataObjects;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Submission{
+    public static final Submission SHUTDOWN = new Submission();
+    public static final Submission NO_INCOMING = new Submission();
     private final String zipFile;
     private Path sourceDir;
     private Path classesDir;
@@ -17,6 +19,13 @@ public class Submission{
         this.lastName = lastName;
         this.zipFile = zipFile;
         results = new ArrayList<>();
+    }
+
+    private Submission(){
+     zipFile = "";
+     firstName = "";
+     lastName = "";
+     results = new ArrayList<>();
     }
 
     public String getFirstName() {

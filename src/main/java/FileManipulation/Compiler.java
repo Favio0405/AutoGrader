@@ -1,6 +1,6 @@
 package FileManipulation;
 
-import TestObjects.Submission;
+import DataObjects.Submission;
 
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;

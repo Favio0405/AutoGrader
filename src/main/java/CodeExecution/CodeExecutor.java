@@ -1,8 +1,8 @@
 package CodeExecution;
 
-import TestObjects.FunctionTest;
-import TestObjects.Submission;
-import TestObjects.TestResult;
+import DataObjects.FunctionTest;
+import DataObjects.Submission;
+import DataObjects.TestResult;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;

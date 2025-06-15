@@ -1,4 +1,4 @@
-package TestObjects;
+package DataObjects;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;

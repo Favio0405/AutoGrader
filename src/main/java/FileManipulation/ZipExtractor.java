@@ -1,6 +1,6 @@
 package FileManipulation;
 
-import TestObjects.Submission;
+import DataObjects.Submission;
 
 import java.io.*;
 import java.nio.file.Paths;
