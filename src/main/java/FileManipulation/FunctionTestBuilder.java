@@ -4,12 +4,13 @@ import TestObjects.FunctionTest;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.InputStream;
+import java.io.IOException;
 import java.lang.reflect.Array;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
-import java.util.Scanner;
 
 
 public class FunctionTestBuilder {
@@ -25,18 +26,17 @@ public class FunctionTestBuilder {
             "char",    char.class
     );
 
-    public FunctionTestBuilder(String resourcePath){
-        InputStream inputStream = getClass().getClassLoader().getResourceAsStream(resourcePath);
-        if (inputStream == null) {
-            System.err.println("Resource not found: " + resourcePath);
-            System.exit(1);
+    public FunctionTestBuilder(String filePath){
+        String jsonString = null;
+        try {
+            jsonString = Files.readString(Path.of(filePath), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            System.err.println("Failed to read json file: " + filePath);
+            e.printStackTrace();
+            System.exit(13);
         }
 
-        String JSONString;
-        try (Scanner scanner = new Scanner(inputStream, StandardCharsets.UTF_8)) {
-            JSONString = scanner.useDelimiter("\\A").next();
-        }
-        jsonArray = new JSONObject(JSONString).getJSONArray("functionTests");
+        jsonArray = new JSONObject(jsonString).getJSONArray("functionTests");
     }
     public JSONArray getJsonArray() {
         return jsonArray;

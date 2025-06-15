@@ -12,21 +12,17 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.*;
 import java.util.*;
-import java.util.concurrent.Callable;
 import java.util.stream.Stream;
 
-public class CodeExecutor implements Callable<Submission> {
-    private final String dirPath;
+public class CodeExecutor{
     private final FunctionTest[] functionTests;
 
-    public CodeExecutor(String dirPath, FunctionTest[] functionTests) {
-        this.dirPath = dirPath;
+    public CodeExecutor(FunctionTest[] functionTests) {
         this.functionTests = functionTests;
     }
 
-    public Map< String, Class<?>> loadClasses(){
+    private Map< String, Class<?>> loadClasses(Path dir){
         Map<String, Class<?>> classes = new HashMap<>();
-        Path dir = Paths.get(dirPath);
         try(URLClassLoader loader = new URLClassLoader(new URL[]{dir.toUri().toURL()})){
             try(Stream<Path> pathStream = Files.walk(dir)){
                 pathStream.filter(path -> path.toString().endsWith(".class"))
@@ -53,7 +49,7 @@ public class CodeExecutor implements Callable<Submission> {
         return classes;
     }
 
-    public TestResult executeTest(FunctionTest test, Class<?> functionClass){
+    private void executeTest(FunctionTest test, Class<?> functionClass, Submission submission){
         String className = test.className();
         String methodName = test.methodName();
         Class<?>[] paramTypes = test.paramTypes();
@@ -82,23 +78,19 @@ public class CodeExecutor implements Callable<Submission> {
         String actualStr = (result == null) ? "null" : result.toString();
         String expectedStr = (expected == null) ? "null" : expected.toString();
         double points = test.scoreVal();
-        return new TestResult(passed, actualStr, expectedStr, 0, test, points);
+        submission.addResult(new TestResult(passed, actualStr, expectedStr, 0, test, points));
     }
 
-    public TestResult[] runTests(Map<String, Class<?>> classMap){
-        TestResult[] results = new TestResult[functionTests.length];
-        for(int i = 0; i < results.length; i++){
+    private void runTests(Map<String, Class<?>> classMap, Submission submission){
+        for(int i = 0; i < functionTests.length; i++){
             FunctionTest test = functionTests[i];
-            results[i] = executeTest(test, classMap.get(test.className()));
+            executeTest(test, classMap.get(test.className()), submission);
         }
-
-        return results;
     }
 
-    @Override
-    public Submission call() throws Exception {
-        Map<String, Class<?>> classMap = loadClasses();
-        return null;
+    public void processSubmission(Submission submission){
+        Map<String, Class<?>> classMap = loadClasses(submission.getClassesDir());
+        runTests(classMap, submission);
     }
 }
 

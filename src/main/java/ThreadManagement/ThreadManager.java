@@ -1,4 +1,5 @@
-package Main;
+package ThreadManagement;
 
 public class ThreadManager {
+
 }

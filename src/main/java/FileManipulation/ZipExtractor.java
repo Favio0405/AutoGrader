@@ -1,19 +1,15 @@
 package FileManipulation;
 
+import TestObjects.Submission;
+
 import java.io.*;
+import java.nio.file.Paths;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-public class ZipExtractor implements Runnable{
-    String zipPath;
-    String outPath;
+public class ZipExtractor{
 
-    public ZipExtractor(String zipPath, String outPath) {
-        this.zipPath = zipPath;
-        this.outPath = outPath;
-    }
-
-    public void unzip() throws IOException {
+    private static void unzip(String zipPath, String outPath) throws IOException {
         File outDir = new File(outPath);
         if (!outDir.exists()) {
             outDir.mkdirs();
@@ -34,7 +30,7 @@ public class ZipExtractor implements Runnable{
         }
     }
 
-    private void extractFile(ZipInputStream zipIn, String filePath) throws IOException {
+    private static void extractFile(ZipInputStream zipIn, String filePath) throws IOException {
         File outFile = new File(filePath);
         File parent = outFile.getParentFile();
         if (parent != null && !parent.exists()) {
@@ -50,13 +46,16 @@ public class ZipExtractor implements Runnable{
         }
     }
 
-    @Override
-    public void run() {
+    public static void processSubmission(Submission submission){
+        String zipPath = submission.getZipFile();
+        String outPath = zipPath.substring(0, zipPath.length() - 4) + "Source";
         try {
-            unzip();
+            unzip(zipPath, outPath);
         } catch (IOException e) {
-            System.err.println("Could not unzip file " + zipPath);
-            System.exit(13);
+            System.err.println("Could not unzip file");
+            e.printStackTrace();
+            System.exit(16);
         }
+        submission.setSourceDir(Paths.get(outPath));
     }
 }
