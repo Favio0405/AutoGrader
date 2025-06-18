@@ -64,21 +64,30 @@ public class CodeExecutor{
             }
             result = method.invoke(instance, args);
         }
-        catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e){
+        catch (NoSuchMethodException | IllegalAccessException e){
             System.err.println("Method " + methodName + " could not be invoked");
             e.printStackTrace();
             System.exit(9);
-        }catch (InstantiationException e) {
+        }
+        catch (InstantiationException e) {
             System.err.println("Could not instantiate class " + className);
             e.printStackTrace();
             System.exit(10);
+        }
+        catch (InvocationTargetException e){
+            Throwable realException = e.getCause();
+            String error = realException.getClass().getName();
+            submission.addResult
+                    (new TestResult(false, "error", (expected == null) ? "null" : expected.toString(),
+                            0, error, test, test.scoreVal()));
+            return;
         }
         boolean passed = Objects.deepEquals(result, expected);
 
         String actualStr = (result == null) ? "null" : result.toString();
         String expectedStr = (expected == null) ? "null" : expected.toString();
         double points = test.scoreVal();
-        submission.addResult(new TestResult(passed, actualStr, expectedStr, 0, test, points));
+        submission.addResult(new TestResult(passed, actualStr, expectedStr, 0, "none", test, points));
     }
 
     private void runTests(Map<String, Class<?>> classMap, Submission submission){
