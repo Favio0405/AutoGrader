@@ -38,9 +38,6 @@ public class FunctionTestBuilder {
 
         jsonArray = new JSONObject(jsonString).getJSONArray("functionTests");
     }
-    public JSONArray getJsonArray() {
-        return jsonArray;
-    }
 
     public FunctionTest[] buildFunctionTests(){
         FunctionTest[] functionTests = new FunctionTest[jsonArray.length()];

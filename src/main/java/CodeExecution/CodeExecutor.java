@@ -82,8 +82,7 @@ public class CodeExecutor{
     }
 
     private void runTests(Map<String, Class<?>> classMap, Submission submission){
-        for(int i = 0; i < functionTests.length; i++){
-            FunctionTest test = functionTests[i];
+        for (FunctionTest test : functionTests) {
             executeTest(test, classMap.get(test.className()), submission);
         }
     }

@@ -19,10 +19,6 @@ public class Worker extends Thread{
         this.submissions = submissions;
     }
 
-    public BlockingQueue<Submission> getSubmissions() {
-        return submissions;
-    }
-
     public void setProcessor(Consumer<Submission> processor) {
         this.processor = processor;
     }
