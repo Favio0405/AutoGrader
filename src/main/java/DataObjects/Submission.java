@@ -14,6 +14,10 @@ public class Submission{
     private final String lastName;
     private final List<TestResult> results;
 
+    public List<TestResult> getResults() {
+        return results;
+    }
+
     public Submission(String firstName, String lastName, String zipFile) {
         this.firstName = firstName;
         this.lastName = lastName;
@@ -36,12 +40,14 @@ public class Submission{
         return lastName;
     }
 
-    public double getScore() {
-        double points = 0;
+    public String getScore() {
+        double achievedScore = 0;
+        double maxScore = 0;
         for(TestResult t : results){
-            if(t.passed()) points += t.points();
+            maxScore += t.points();
+            achievedScore = t.passed() ? achievedScore + t.points() : achievedScore;
         }
-        return points;
+        return achievedScore + "/" + maxScore;
     }
 
     public void addResult(TestResult result) {
@@ -52,14 +58,10 @@ public class Submission{
     public String toString(){
         StringBuilder str = new StringBuilder();
         str.append(firstName).append(' ').append(lastName).append(":\n");
-        double achievedScore = 0;
-        double maxScore = 0;
         for(TestResult t : results){
             str.append(t).append('\n');
-            maxScore += t.points();
-            achievedScore = t.passed() ? achievedScore + t.points() : achievedScore;
         }
-        str.append("Score: ").append(achievedScore).append('/').append(maxScore);
+        str.append("Score: ").append(getScore());
 
         return str.toString();
     }

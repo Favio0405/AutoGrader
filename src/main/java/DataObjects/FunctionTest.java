@@ -3,7 +3,7 @@ package DataObjects;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
-public record FunctionTest(String className, String methodName, Class<?>[] paramTypes,
+public record FunctionTest(String testName, String className, String methodName, Class<?>[] paramTypes,
                            Object[] args, Object expected, double scoreVal) {
 
     @Override
@@ -18,7 +18,7 @@ public record FunctionTest(String className, String methodName, Class<?>[] param
                 ? arrayToString(expected)
                 : String.valueOf(expected);
         return String.format(
-                "FunctionTest{className='%s', methodName='%s', paramTypes=%s, args=%s, expected=%s, scoreVal=%.2f}",
+                "FunctionTest{testName = '%s', className='%s', methodName='%s', paramTypes=%s, args=%s, expected=%s, scoreVal=%.2f}", testName,
                 className, methodName, params, arguments, expectedStr, scoreVal
         );
     }

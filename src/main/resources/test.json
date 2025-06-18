@@ -1,6 +1,7 @@
 {
   "functionTests": [
     {
+      "testName": "SumTest",
       "className": "Sum",
       "methodName": "sum",
       "paramTypes": ["int[]"],
@@ -11,6 +12,7 @@
       "score": 10
     },
     {
+      "testName": "MultTest",
       "className": "Multiply",
       "methodName": "mult",
       "paramTypes": ["int[]"],
@@ -21,6 +23,7 @@
       "score": 10
     },
     {
+      "testName": "DivTest",
       "className": "Divide",
       "methodName": "div",
       "paramTypes": ["int[]"],

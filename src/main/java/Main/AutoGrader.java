@@ -7,6 +7,7 @@ import FileManipulation.FunctionTestBuilder;
 import FileManipulation.ZipExtractor;
 import DataObjects.FunctionTest;
 import DataObjects.Submission;
+import ReportGeneration.ReportGenerator;
 import ThreadManagement.ThreadManager;
 import org.apache.commons.cli.*;
 
@@ -38,9 +39,12 @@ public class AutoGrader {
         Option test =
                 new Option("t", "test", true, "Add test file");
         test.setRequired(true);
+        Option verbose =
+                new Option("v", "verbose", false, "Output program info to command line");
+        verbose.setRequired(false);
 
         options.addOption(test);
-
+        options.addOption(verbose);
 
         CommandLineParser parser = new DefaultParser();
         CommandLine cmd = null;
@@ -53,18 +57,21 @@ public class AutoGrader {
         }
 
         if(cmd.hasOption("p")){
-            Submission result = GradeSingleProgram(cmd);
+            Submission result = gradeSingleProgram(cmd);
             System.out.println(result);
         }
         else if(cmd.hasOption("b")){
-            Submission[] results = GradeBatch(cmd);
-            for(Submission submission : results){
-                System.out.println(submission);
+            Submission[] submissions = gradeBatch(cmd);
+            if(cmd.hasOption("v")){
+                for(Submission submission : submissions){
+                    System.out.println(submission);
+                }
             }
+            generateReport(submissions, cmd.getOptionValue("b") + File.separator + "report.xlsx");
         }
     }
 
-    public static Submission GradeSingleProgram(CommandLine cmd){
+    public static Submission gradeSingleProgram(CommandLine cmd){
         String zipFile = cmd.getOptionValue("p");
         String testFile = cmd.getOptionValue("t");
         FunctionTestBuilder builder = new FunctionTestBuilder(testFile);
@@ -91,7 +98,7 @@ public class AutoGrader {
         return new Submission(firstName, lastName, zipFile);
     }
 
-    public static Submission[] GradeBatch(CommandLine cmd){
+    public static Submission[] gradeBatch(CommandLine cmd){
         String testFile = cmd.getOptionValue("t");
         FunctionTestBuilder builder = new FunctionTestBuilder(testFile);
         TESTS = builder.buildFunctionTests();
@@ -119,6 +126,11 @@ public class AutoGrader {
         }
         threadManager.shutdown();
         return submissions;
+    }
+
+    public static void generateReport(Submission[] submissions, String filePath){
+        ReportGenerator reportGenerator = new ReportGenerator(submissions, TESTS);
+        reportGenerator.generateReport(filePath);
     }
 }
 

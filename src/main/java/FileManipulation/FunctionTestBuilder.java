@@ -46,6 +46,7 @@ public class FunctionTestBuilder {
         FunctionTest[] functionTests = new FunctionTest[jsonArray.length()];
         for(int i = 0; i < jsonArray.length(); i++){
             JSONObject obj = jsonArray.getJSONObject(i);
+            String testName = obj.getString("testName");
             String className = obj.getString("className");
             String methodName = obj.getString("methodName");
             Class<?>[] paramTypes = null;
@@ -60,7 +61,7 @@ public class FunctionTestBuilder {
             Object[] args = readArgs(obj.getJSONArray("args"), paramTypes);
             Object expected = obj.get("expected");
             double score = obj.getDouble("score");
-            functionTests[i] = new FunctionTest(className, methodName, paramTypes, args, expected, score);
+            functionTests[i] = new FunctionTest(testName, className, methodName, paramTypes, args, expected, score);
         }
         return functionTests;
     }
