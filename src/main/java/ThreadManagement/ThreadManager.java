@@ -1,6 +1,7 @@
 package ThreadManagement;
 
 import CodeExecution.CodeExecutor;
+import CodeExecution.ContainerPool;
 import FileManipulation.Compiler;
 import FileManipulation.ZipExtractor;
 import Main.AutoGrader;
@@ -35,6 +36,7 @@ public class ThreadManager {
     private final Object transferLock;
     private final CompletableFuture<Submission[]> future;
     private final ConcurrentLinkedQueue<Submission> completedSubmissions;
+    private final ContainerPool  containerPool;
     private ThreadManager(){
         unzipQueue = new LinkedBlockingQueue<>();
         compileQueue = new LinkedBlockingQueue<>();
@@ -90,7 +92,9 @@ public class ThreadManager {
             if(compileDone && executionQueue.isEmpty() && executionsInProgress.get() == 0)
                 future.complete(completedSubmissions.toArray(new Submission[0]));
         };
-        initializeThreads(allocateThreads(0.2, 0.4, 0.4));
+        int[] threadSizes = allocateThreads(0.2, 0.4, 0.4);
+        containerPool = new ContainerPool("", threadSizes[0] + threadSizes[1] + threadSizes[2]);
+        initializeResources(threadSizes);
     }
 
     public int[] allocateThreads(double pctUnzip, double pctCompile, double pctExec) {
@@ -120,8 +124,7 @@ public class ThreadManager {
 
         return new int[]{ unzip, compile, exec };
     }
-    private void initializeThreads(int[] sizes){
-
+    private void initializeResources(int[] sizes){
         for(int i = 0; i < sizes[0]; i++){
             Worker worker = new Worker(unzipQueue, unzip);
             unzipWorkers.add(worker);

@@ -3,45 +3,66 @@ package FileManipulation;
 import DataObjects.Submission;
 
 import java.io.*;
+import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 public class ZipExtractor{
 
     private static void unzip(String zipPath, String outPath) throws IOException {
-        File outDir = new File(outPath);
-        if (!outDir.exists()) {
-            outDir.mkdirs();
-        }
+        Path outDir = Paths.get(outPath);
+        Files.createDirectories(outDir);
 
-        try (ZipInputStream zipIn = new ZipInputStream(new FileInputStream(zipPath))) {
-            ZipEntry entry = zipIn.getNextEntry();
-            while (entry != null) {
-                String filePath = outDir + File.separator + entry.getName();
-                if (!entry.isDirectory()) {
-                    extractFile(zipIn, filePath);
-                } else {
-                    new File(filePath).mkdirs();
+        Path outRoot = outDir.toRealPath();
+
+        try (ZipInputStream zipIn = new ZipInputStream(new BufferedInputStream(new FileInputStream(zipPath)))) {
+            ZipEntry entry;
+            while ((entry = zipIn.getNextEntry()) != null) {
+                String rawName = entry.getName();
+
+                if (rawName.isBlank()) {
+                    zipIn.closeEntry();
+                    throw new IOException("Blocked zip entry with blank name");
                 }
+
+                // Block absolute paths (good defense-in-depth)
+                Path entryPath = Paths.get(rawName);
+                if (entryPath.isAbsolute()
+                        || rawName.startsWith("\\")
+                        || rawName.startsWith("/")
+                        || rawName.matches("^[a-zA-Z]:.*")) {
+                    zipIn.closeEntry();
+                    throw new IOException("Blocked zip entry with absolute path: " + rawName);
+                }
+
+                Path target = outRoot.resolve(rawName).normalize();
+                if (!target.startsWith(outRoot)) {
+                    zipIn.closeEntry();
+                    throw new IOException("Blocked Zip Slip entry: " + rawName);
+                }
+
+                if (entry.isDirectory()) {
+                    Files.createDirectories(target);
+                } else {
+                    Path parent = target.getParent();
+                    if (parent != null) Files.createDirectories(parent);
+
+                    try (BufferedOutputStream bos =
+                                 new BufferedOutputStream(Files.newOutputStream(target,
+                                         StandardOpenOption.CREATE,
+                                         StandardOpenOption.TRUNCATE_EXISTING))) {
+                        byte[] buffer = new byte[4096];
+                        int read;
+                        while ((read = zipIn.read(buffer)) != -1) {
+                            bos.write(buffer, 0, read);
+                        }
+                    }
+                }
+
                 zipIn.closeEntry();
-                entry = zipIn.getNextEntry();
-            }
-        }
-    }
-
-    private static void extractFile(ZipInputStream zipIn, String filePath) throws IOException {
-        File outFile = new File(filePath);
-        File parent = outFile.getParentFile();
-        if (parent != null && !parent.exists()) {
-            parent.mkdirs();
-        }
-
-        try (BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(outFile))) {
-            byte[] buffer = new byte[4096];
-            int read;
-            while ((read = zipIn.read(buffer)) != -1) {
-                bos.write(buffer, 0, read);
             }
         }
     }
