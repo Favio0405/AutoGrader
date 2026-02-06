@@ -1,7 +1,4 @@
 package CodeExecution;
-import DataObjects.FunctionTest;
-import DataObjects.Submission;
-import DataObjects.TestResult;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -12,7 +9,7 @@ import java.net.URLClassLoader;
 import java.nio.file.*;
 import java.util.*;
 import java.util.stream.Stream;
-
+import DataObjects.*;
 public class CodeExecutor{
     private final FunctionTest[] functionTests;
 
