@@ -1,8 +1,6 @@
 package DataObjects;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
 
 public class Submission{
     public static final Submission SHUTDOWN = new Submission();
@@ -12,24 +10,18 @@ public class Submission{
     private Path classesDir;
     private final String firstName;
     private final String lastName;
-    private final List<TestResult> results;
-
-    public List<TestResult> getResults() {
-        return results;
-    }
+    private TestResult[] results;
 
     public Submission(String firstName, String lastName, String zipFile) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.zipFile = zipFile;
-        results = new ArrayList<>();
     }
 
     private Submission(){
      zipFile = "";
      firstName = "";
      lastName = "";
-     results = new ArrayList<>();
     }
 
     public String getFirstName() {
@@ -48,10 +40,6 @@ public class Submission{
             achievedScore = t.passed() ? achievedScore + t.points() : achievedScore;
         }
         return achievedScore + "/" + maxScore;
-    }
-
-    public void addResult(TestResult result) {
-        results.add(result);
     }
 
     @Override
@@ -84,5 +72,11 @@ public class Submission{
 
     public void setClassesDir(Path classesDir) {
         this.classesDir = classesDir;
+    }
+    public TestResult[] getResults() {
+        return results;
+    }
+    public void setResults(TestResult[] results) {
+        this.results = results;
     }
 }

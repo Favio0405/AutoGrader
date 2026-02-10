@@ -1,10 +1,11 @@
 package DataObjects;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
 public record FunctionTest(String testName, String className, String methodName, Class<?>[] paramTypes,
-                           Object[] args, Object expected, double scoreVal) {
+                           Object[] args, Object expected, double scoreVal) implements Serializable {
 
     @Override
     public String toString() {

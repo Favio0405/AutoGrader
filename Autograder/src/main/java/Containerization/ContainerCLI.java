@@ -1,16 +1,22 @@
-package CodeExecution;
+package Containerization;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 public class ContainerCLI {
-    public static void createAndStart(String name, String image) throws IOException, InterruptedException {
+    private final static String image = "eclipse-temurin:21-jre";
+    public static void createAndStart(String name, String testFile) throws IOException, InterruptedException {
+        String runnerDir = Paths.get("target/runner").toAbsolutePath().toString();
+        String testFileAbs = Paths.get(testFile).toAbsolutePath().toString();
         ExecResult r = execute(Duration.ofSeconds(20),
                 "docker", "run", "-d",
                 "--name", name,
+                "--user",
+                "65534:65534",
                 "--cpus=1",
                 "--memory=512m",
                 "--memory-swap=512m",
@@ -19,10 +25,12 @@ public class ContainerCLI {
                 "--read-only",
                 "--cap-drop=ALL",
                 "--security-opt", "no-new-privileges",
+                "-v", runnerDir + ":/runner:ro",
+                "-v", testFileAbs + ":/tests/tests.bin:ro",
                 "--tmpfs", "/tmp:rw,nosuid,noexec,size=64m",
                 "--tmpfs", "/work:rw,nosuid,size=256m",
                 image,
-                "bash", "-lc", "sleep infinity"
+                "sleep", "infinity"
         );
 
         if (r.exitCode() != 0) {

@@ -1,10 +1,13 @@
 package FileManipulation;
 
 import DataObjects.FunctionTest;
+import Main.AutoGrader;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.lang.reflect.Array;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -60,7 +63,18 @@ public class FunctionTestBuilder {
             double score = obj.getDouble("score");
             functionTests[i] = new FunctionTest(testName, className, methodName, paramTypes, args, expected, score);
         }
+        try {
+            writeToFile(functionTests);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         return functionTests;
+    }
+
+    private static void writeToFile(FunctionTest[] tests) throws IOException {
+        ObjectOutputStream objOut = new ObjectOutputStream(new FileOutputStream(AutoGrader.TESTDIR + "/tests.bin"));
+        objOut.writeObject(tests);
+        objOut.flush();
     }
 
     private Class<?>[] readParamTypes(JSONArray array) throws ClassNotFoundException {

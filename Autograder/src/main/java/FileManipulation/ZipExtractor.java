@@ -10,7 +10,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-public class ZipExtractor{
+public class  ZipExtractor{
 
     private static void unzip(String zipPath, String outPath) throws IOException {
         Path outDir = Paths.get(outPath);
@@ -28,7 +28,6 @@ public class ZipExtractor{
                     throw new IOException("Blocked zip entry with blank name");
                 }
 
-                // Block absolute paths (good defense-in-depth)
                 Path entryPath = Paths.get(rawName);
                 if (entryPath.isAbsolute()
                         || rawName.startsWith("\\")

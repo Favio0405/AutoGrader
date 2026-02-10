@@ -1,0 +1,37 @@
+{
+  "functionTests": [
+    {
+      "testName": "SumTest",
+      "className": "Sum",
+      "methodName": "sum",
+      "paramTypes": ["int[]"],
+      "args": [
+        [5, 4, 5]
+      ],
+      "expected": 14,
+      "score": 10
+    },
+    {
+      "testName": "MultTest",
+      "className": "Multiply",
+      "methodName": "mult",
+      "paramTypes": ["int[]"],
+      "args": [
+        [5, 5]
+      ],
+      "expected": 25,
+      "score": 10
+    },
+    {
+      "testName": "DivTest",
+      "className": "Divide",
+      "methodName": "div",
+      "paramTypes": ["int[]"],
+      "args": [
+        [25, 5]
+      ],
+      "expected": 5,
+      "score": 10
+    }
+  ]
+}

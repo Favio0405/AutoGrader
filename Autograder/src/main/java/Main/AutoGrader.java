@@ -1,26 +1,31 @@
 package Main;
 
 
-import CodeExecution.CodeExecutor;
+import Containerization.ContainerCLI;
+import DataObjects.TestResult;
 import FileManipulation.Compiler;
 import FileManipulation.FunctionTestBuilder;
 import FileManipulation.ZipExtractor;
 import DataObjects.FunctionTest;
 import DataObjects.Submission;
+import IPC.ClassBundleWriter;
+import IPC.ResultBundleReader;
 import ReportGeneration.ReportGenerator;
 import ThreadManagement.ThreadManager;
 import org.apache.commons.cli.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
-
 public class AutoGrader {
     public static FunctionTest[] TESTS;
+    public static String TESTDIR;
     public static void main(String[] args){
         Options options = new Options();
         OptionGroup group = new OptionGroup();
@@ -48,6 +53,7 @@ public class AutoGrader {
 
         CommandLineParser parser = new DefaultParser();
         CommandLine cmd = null;
+
         try {
             cmd = parser.parse(options, args);
         } catch (ParseException e) {
@@ -56,8 +62,15 @@ public class AutoGrader {
             System.exit(11);
         }
 
+        TESTDIR = Path.of(cmd.getOptionValue("t")).toAbsolutePath().getParent().toString();
+
         if(cmd.hasOption("p")){
-            Submission result = gradeSingleProgram(cmd);
+            Submission result;
+            try {
+                result = gradeSingleProgram(cmd);
+            } catch (IOException | InterruptedException e) {
+                throw new RuntimeException(e);
+            }
             System.out.println(result);
         }
         else if(cmd.hasOption("b")){
@@ -71,17 +84,30 @@ public class AutoGrader {
         }
     }
 
-    public static Submission gradeSingleProgram(CommandLine cmd){
+    public static Submission gradeSingleProgram(CommandLine cmd) throws IOException, InterruptedException {
         String zipFile = cmd.getOptionValue("p");
-        String testFile = cmd.getOptionValue("t");
-        FunctionTestBuilder builder = new FunctionTestBuilder(testFile);
+        FunctionTestBuilder builder = new FunctionTestBuilder(TESTDIR);
         TESTS = builder.buildFunctionTests();
         Submission submission = createSubmission(zipFile);
         ZipExtractor.processSubmission(submission);
         Compiler compiler = new Compiler();
         compiler.processSubmission(submission);
-        CodeExecutor codeExecutor = new CodeExecutor(TESTS);
-        codeExecutor.processSubmission(submission);
+        String container = "autograder-container" + java.util.UUID.randomUUID();
+        ContainerCLI.createAndStart(container, TESTDIR);
+        Process p = new ProcessBuilder(
+                "docker", "exec", "-i", container,
+                "java", "-jar", "/runner/runner-fat.jar"
+        ).start();
+        OutputStream outStream = p.getOutputStream();
+        InputStream inStream = p.getInputStream();
+        ClassBundleWriter.writeBundle(outStream , submission.getClassesDir());
+        TestResult[] results = ResultBundleReader.readBundle(inStream);
+        submission.setResults(results);
+        ClassBundleWriter.sendTerminationSignal(outStream);
+        if(ResultBundleReader.readBundle(inStream) != null) {
+            ContainerCLI.remove(container);
+            throw new RuntimeException("Could not terminate container runner");
+        }
         return submission;
     }
 

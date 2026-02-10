@@ -1,12 +1,14 @@
 package ThreadManagement;
 
-import CodeExecution.CodeExecutor;
-import CodeExecution.ContainerPool;
+import DataObjects.TestResult;
+import IPC.ClassBundleWriter;
+import Containerization.ContainerPool;
 import FileManipulation.Compiler;
 import FileManipulation.ZipExtractor;
-import Main.AutoGrader;
 import DataObjects.Submission;
+import IPC.ResultBundleReader;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
@@ -14,9 +16,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
-public class ThreadManager {
+public class  ThreadManager {
     private static final ThreadManager INSTANCE = new ThreadManager();
     private final BlockingQueue<Submission> unzipQueue;
     private final BlockingQueue<Submission> compileQueue;
@@ -24,9 +26,9 @@ public class ThreadManager {
     private final List<Worker> unzipWorkers;
     private final List<Worker> compileWorkers;
     private final List<Worker> executionWorkers;
-    private final Consumer<Submission> unzip;
-    private final Consumer<Submission> compile;
-    private final Consumer<Submission> execute;
+    private final BiConsumer<Submission, Worker> unzip;
+    private final BiConsumer<Submission, Worker> compile;
+    private final BiConsumer<Submission, Worker> execute;
     private final AtomicInteger unzipsInProgress;
     private final AtomicInteger compilesInProgress;
     private final AtomicInteger executionsInProgress;
@@ -36,7 +38,7 @@ public class ThreadManager {
     private final Object transferLock;
     private final CompletableFuture<Submission[]> future;
     private final ConcurrentLinkedQueue<Submission> completedSubmissions;
-    //private final ContainerPool  containerPool;
+    private final ContainerPool containerPool;
     private ThreadManager(){
         unzipQueue = new LinkedBlockingQueue<>();
         compileQueue = new LinkedBlockingQueue<>();
@@ -55,9 +57,8 @@ public class ThreadManager {
         completedSubmissions = new ConcurrentLinkedQueue<>();
 
         Compiler compiler = new Compiler();
-        CodeExecutor executor = new CodeExecutor(AutoGrader.TESTS);
 
-        unzip = submission -> {
+        unzip = (submission, worker) -> {
             unzipsInProgress.incrementAndGet();
             try {
                 ZipExtractor.processSubmission(submission);
@@ -69,7 +70,7 @@ public class ThreadManager {
             if(noMoreIncoming && unzipQueue.isEmpty() && unzipsInProgress.get() == 0)
                 transferUnzipWorkers();
         };
-        compile = submission -> {
+        compile = (submission, worker) -> {
             compilesInProgress.incrementAndGet();
             try {
                 compiler.processSubmission(submission);
@@ -81,19 +82,23 @@ public class ThreadManager {
             if(unzipDone && compileQueue.isEmpty() && compilesInProgress.get() == 0)
                 transferCompileWorkers();
         };
-        execute = submission -> {
+        execute = (submission, worker) -> {
             executionsInProgress.incrementAndGet();
             try {
-                executor.processSubmission(submission);
+                ClassBundleWriter.writeBundle(worker.getOutStream(), submission.getClassesDir());
+                TestResult[] results = ResultBundleReader.readBundle(worker.getInStream());
+                submission.setResults(results);
                 completedSubmissions.add(submission);
-            }finally {
+            } catch (IOException e) {
+                throw new RuntimeException("Couldn't write bundle to container");
+            } finally {
                 executionsInProgress.decrementAndGet();
             }
             if(compileDone && executionQueue.isEmpty() && executionsInProgress.get() == 0)
                 future.complete(completedSubmissions.toArray(new Submission[0]));
         };
         int[] threadSizes = allocateThreads(0.2, 0.4, 0.4);
-        //containerPool = new ContainerPool("", threadSizes[0] + threadSizes[1] + threadSizes[2]);
+        containerPool = new ContainerPool(threadSizes[0] + threadSizes[1] + threadSizes[2]);
         initializeResources(threadSizes);
     }
 
@@ -137,6 +142,11 @@ public class ThreadManager {
         }
         for(int i = 0; i < sizes[2]; i++){
             Worker worker = new Worker(executionQueue, execute);
+            try {
+                worker.assignContainer(containerPool.requestContainer());
+            } catch (IOException e) {
+                throw new RuntimeException("Cannot assign container to worker");
+            }
             executionWorkers.add(worker);
             worker.start();
         }
@@ -165,6 +175,11 @@ public class ThreadManager {
     private void transferCompileWorkers(){
         synchronized (transferLock) {
             for (Worker worker : compileWorkers) {
+                try {
+                    worker.assignContainer(containerPool.requestContainer());
+                } catch (IOException e) {
+                    throw new RuntimeException("Cannot assign container to worker");
+                }
                 worker.setSubmissions(executionQueue);
                 worker.setProcessor(execute);
             }
@@ -187,6 +202,7 @@ public class ThreadManager {
                 e.printStackTrace();
             }
         }
+        containerPool.close();
     }
 
     public CompletableFuture<Submission[]> getFuture() {

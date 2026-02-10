@@ -1,4 +1,6 @@
-package CodeExecution;
+package Containerization;
+
+import Main.AutoGrader;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -12,11 +14,11 @@ public class ContainerPool implements AutoCloseable{
     private final List<String> containers = Collections.synchronizedList(new ArrayList<>());
     private final List<String> failedRemoval = new ArrayList<>();
 
-    public ContainerPool(String image, int numContainers)  {
+    public ContainerPool(int numContainers)  {
         for(int i = 0; i < numContainers; i++){
             String name = "autograder-container" + java.util.UUID.randomUUID();
             try {
-                ContainerCLI.createAndStart(name, image);
+                ContainerCLI.createAndStart(name, AutoGrader.TESTDIR);
             } catch (IOException | InterruptedException e) {
                 throw new RuntimeException(e);
             }
