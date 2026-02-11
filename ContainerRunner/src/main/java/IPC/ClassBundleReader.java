@@ -4,6 +4,7 @@ import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -23,13 +24,11 @@ import java.util.Map;
 
 public class ClassBundleReader {
     private static final int HEADER = 0x434C5353;
-    private static final int TERMINATE = 0x54524D4E;
     private static final int VERSION = 1;
     public static Map<String, byte[]> readBundle(InputStream in) throws IOException {
         DataInputStream dataIn = new DataInputStream(new BufferedInputStream(in, 1 << 20));
 
         int header = dataIn.readInt();
-        if (header == TERMINATE) return null;
         if (header != HEADER) throw new IOException("Wrong header: " + Integer.toHexString(header));
 
         int version = dataIn.readInt();
@@ -55,6 +54,6 @@ public class ClassBundleReader {
         int len = dataIn.readInt();
         if (len <= 0 || len > 1024) throw new IOException("Suspicious class name length: " + len);
 
-        return new String(dataIn.readNBytes(len));
+        return new String(dataIn.readNBytes(len), StandardCharsets.UTF_8);
     }
 }

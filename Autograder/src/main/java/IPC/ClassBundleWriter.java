@@ -18,6 +18,7 @@ import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -28,7 +29,6 @@ import java.util.stream.Stream;
 public class ClassBundleWriter {
     private static final int HEADER = 0x434C5353;
     private static final int VERSION = 1;
-    private static final int TERMINATE = 0x54524D4E;
 
     public static void writeBundle(OutputStream out, Path classesDir) throws IOException{
         List<Path> classFiles;
@@ -46,16 +46,12 @@ public class ClassBundleWriter {
         for(Path p : classFiles){
             String className = getClassName(classesDir, p);
             byte[] bytes = Files.readAllBytes(p);
-            dataOut.writeInt(className.length());
-            dataOut.writeChars(className);
+            byte[] nameBytes = className.getBytes(StandardCharsets.UTF_8);
+            dataOut.writeInt(nameBytes.length);
+            dataOut.write(nameBytes);
             dataOut.writeInt(bytes.length);
             dataOut.write(bytes);
         }
-        dataOut.flush();
-    }
-    public static void sendTerminationSignal(OutputStream out) throws IOException {
-        DataOutputStream dataOut = new DataOutputStream(new BufferedOutputStream(out, 1 << 20));
-        dataOut.write(TERMINATE);
         dataOut.flush();
     }
     private static String getClassName(Path root, Path classFile){

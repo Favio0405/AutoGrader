@@ -6,21 +6,24 @@ import IPC.ClassBundleReader;
 import IPC.ResultBundleWriter;
 
 
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.util.Map;
 
 public class Main {
     public static void main(String[] args){
+        FunctionTest[] arr;
+        try (ObjectInputStream objInput = new ObjectInputStream(new FileInputStream("/tests/tests.bin"))){
+            arr = (FunctionTest[]) objInput.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
         while (true){
             try {
                 Map<String, byte[]> classMap = ClassBundleReader.readBundle(System.in);
-                if (classMap == null){
-                    ResultBundleWriter.sendTerminationSignal();
-                    return;
-                }
                 ByteMapClassLoader classLoader =
                         new ByteMapClassLoader(ByteMapClassLoader.class.getClassLoader(), classMap);
-                FunctionTest[] arr = new FunctionTest[0];
                 CodeExecutor executor = new CodeExecutor(arr, classLoader);
                 TestResult[] results = executor.runTests();
                 ResultBundleWriter.writeBundle(results);

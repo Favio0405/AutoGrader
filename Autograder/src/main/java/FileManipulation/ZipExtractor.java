@@ -66,16 +66,10 @@ public class  ZipExtractor{
         }
     }
 
-    public static void processSubmission(Submission submission){
+    public static void processSubmission(Submission submission) throws IOException{
         String zipPath = submission.getZipFile();
         String outPath = zipPath.substring(0, zipPath.length() - 4) + "Source";
-        try {
-            unzip(zipPath, outPath);
-        } catch (IOException e) {
-            System.err.println("Could not unzip file");
-            e.printStackTrace();
-            System.exit(16);
-        }
+        unzip(zipPath, outPath);
         submission.setSourceDir(Paths.get(outPath));
     }
 }

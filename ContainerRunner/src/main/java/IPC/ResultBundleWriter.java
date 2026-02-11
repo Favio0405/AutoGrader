@@ -25,35 +25,32 @@ import DataObjects.TestResult;
 import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 public class ResultBundleWriter {
     private static final int HEADER = 0x52534C54;
-    private static final int TERMINATE = 0x54524D4E;
     private static final int VERSION = 1;
     public static void writeBundle(TestResult[] results) throws IOException {
         DataOutputStream dataOut = new DataOutputStream(new BufferedOutputStream(System.out, 1 << 20));
 
-        dataOut.write(HEADER);
+        dataOut.writeInt(HEADER);
         dataOut.writeInt(VERSION);
         dataOut.writeInt(results.length);
 
         for(TestResult result : results) {
             dataOut.writeBoolean(result.passed());
-            dataOut.writeInt(result.actualOutput().length());
-            dataOut.writeChars(result.actualOutput());
-            dataOut.writeInt(result.expectedOutput().length());
-            dataOut.writeChars(result.expectedOutput());
+            byte[] bytes = result.actualOutput().getBytes(StandardCharsets.UTF_8);
+            dataOut.writeInt(bytes.length);
+            dataOut.write(bytes);
+            bytes = result.expectedOutput().getBytes(StandardCharsets.UTF_8);
+            dataOut.writeInt(bytes.length);
+            dataOut.write(bytes);
             dataOut.writeLong(result.runtimeMillis());
-            dataOut.writeInt(result.error().length());
-            dataOut.writeChars(result.error());
+            bytes = result.error().getBytes(StandardCharsets.UTF_8);
+            dataOut.writeInt(bytes.length);
+            dataOut.write(bytes);
             dataOut.writeDouble(result.points());
         }
-        dataOut.flush();
-    }
-
-    public static void sendTerminationSignal() throws IOException {
-        DataOutputStream dataOut = new DataOutputStream(new BufferedOutputStream(System.out, 1 << 20));
-        dataOut.write(TERMINATE);
         dataOut.flush();
     }
 }

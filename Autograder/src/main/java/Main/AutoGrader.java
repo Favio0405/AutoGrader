@@ -74,7 +74,12 @@ public class AutoGrader {
             System.out.println(result);
         }
         else if(cmd.hasOption("b")){
-            Submission[] submissions = gradeBatch(cmd);
+            Submission[] submissions;
+            try {
+                submissions = gradeBatch(cmd);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
             if(cmd.hasOption("v")){
                 for(Submission submission : submissions){
                     System.out.println(submission);
@@ -103,11 +108,7 @@ public class AutoGrader {
         ClassBundleWriter.writeBundle(outStream , submission.getClassesDir());
         TestResult[] results = ResultBundleReader.readBundle(inStream);
         submission.setResults(results);
-        ClassBundleWriter.sendTerminationSignal(outStream);
-        if(ResultBundleReader.readBundle(inStream) != null) {
-            ContainerCLI.remove(container);
-            throw new RuntimeException("Could not terminate container runner");
-        }
+        ContainerCLI.remove(container);
         return submission;
     }
 
@@ -124,7 +125,7 @@ public class AutoGrader {
         return new Submission(firstName, lastName, zipFile);
     }
 
-    public static Submission[] gradeBatch(CommandLine cmd){
+    public static Submission[] gradeBatch(CommandLine cmd) throws Exception {
         String testFile = cmd.getOptionValue("t");
         FunctionTestBuilder builder = new FunctionTestBuilder(testFile);
         TESTS = builder.buildFunctionTests();
